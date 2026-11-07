@@ -68,6 +68,7 @@ def validate_input(
         )
     if direction not in ("up", "down"):
         raise ValueError("Hướng di chuyển chỉ nhận 'up' hoặc 'down'.")
+    seen: set[int] = set()
     for cylinder in requests:
         if isinstance(cylinder, bool) or not isinstance(cylinder, int):
             raise ValueError("Mỗi cylinder phải là một số nguyên.")
@@ -76,6 +77,11 @@ def validate_input(
                 f"Cylinder {cylinder} không hợp lệ; giá trị phải từ "
                 f"{TRACK_MIN} đến {track_max}."
             )
+        if cylinder in seen:
+            raise ValueError(
+                f"Cylinder {cylinder} bị trùng trong danh sách yêu cầu."
+            )
+        seen.add(cylinder)
     return cast(Direction, direction)
 
 
