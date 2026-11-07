@@ -5,9 +5,7 @@ Giao diện Tkinter cho phép nhập dữ liệu trực tiếp, xem nhật ký t
 sát biểu đồ Matplotlib để so sánh tổng quãng đường của hai thuật toán.
 
 Project không có cơ sở dữ liệu và không có nút chạy kiểm thử tự động. Các bộ dữ
-liệu mẫu nằm trong README này và `reports/test_results.txt` để bạn tự nhập khi
-trình bày.
-
+liệu mẫu nằm trong README này.
 ## Chức năng
 
 - Chọn riêng LOOK, C-LOOK hoặc so sánh cả hai trên cùng một đầu vào.
