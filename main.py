@@ -9,9 +9,9 @@ from tkinter import messagebox
 
 def main() -> None:
     if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+        getattr(sys.stdout, "reconfigure")(encoding="utf-8")
     if hasattr(sys.stderr, "reconfigure"):
-        sys.stderr.reconfigure(encoding="utf-8")
+        getattr(sys.stderr, "reconfigure")(encoding="utf-8")
     try:
         from gui import run_app
 
