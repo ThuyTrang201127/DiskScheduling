@@ -37,9 +37,6 @@ DiskScheduling/
 ├── visualization/
 │   ├── __init__.py
 │   └── chart.py
-
-└── assets/
-    └── README.txt
 ```
 
 `algorithms/` chỉ chứa kiểm tra dữ liệu và phép tính. `gui/` chịu trách nhiệm
