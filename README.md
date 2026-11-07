@@ -9,7 +9,8 @@ liệu mẫu nằm trong README này.
 ## Chức năng
 
 - Chọn riêng LOOK, C-LOOK hoặc so sánh cả hai trên cùng một đầu vào.
-- Chọn hướng ban đầu Tăng/Giảm; kiểm tra cylinder và đầu đọc trong phạm vi 0–199.
+- Nhập cylinder lớn nhất của đĩa, chọn hướng ban đầu Trái/Phải; kiểm tra cylinder
+  và đầu đọc trong phạm vi từ 0 đến giới hạn đã nhập.
 - Mô phỏng đường đi; hiển thị vị trí trước/sau, khoảng cách, tổng tích lũy, hướng,
   sự kiện đổi hướng/quay vòng và các yêu cầu còn lại.
 - In cùng nhật ký mô phỏng ra Terminal.
@@ -108,9 +109,11 @@ xóa môi trường ảo chưa cài được thư viện rồi tạo lại theo 
 
 ## Cách nhập và trình bày
 
-1. Nhập các cylinder cách nhau bằng dấu phẩy, ví dụ:
-   `98, 183, 37, 122, 14, 124, 65, 67`.
-2. Nhập vị trí đầu đọc, chọn hướng Tăng/Giảm và thuật toán.
+1. Nhập các cylinder cách nhau bằng dấu cách hoặc dấu phẩy, ví dụ:
+   `98 183 37 122 14 124 65 67`. Cách nhập cũ dùng dấu phẩy
+   `98, 183, 37, 122, 14, 124, 65, 67` vẫn được hỗ trợ.
+2. Nhập vị trí đầu đọc và cylinder lớn nhất (mặc định `199`), chọn hướng Trái/Phải
+   và thuật toán.
 3. Nhấn **Chạy mô phỏng**. Nhật ký hiện ở tab **Nhật ký từng bước** và trong
    Terminal; biểu đồ hiện ở tab **Biểu đồ & so sánh**.
 4. Chọn **So sánh cả hai** để xem hai đường đi và biểu đồ cột so sánh cùng lúc.
@@ -125,13 +128,13 @@ hướng**; C-LOOK đánh dấu **Quay vòng** và tô chặng đó màu cam tr�
 ### TC01 – Thông thường
 
 - Cylinder: `98, 183, 37, 122, 14, 124, 65, 67`
-- Đầu đọc: `53`; hướng: **Tăng**
+- Đầu đọc: `53`; cylinder lớn nhất: `199`; hướng: **Phải**
 - LOOK phải có thứ tự `65, 67, 98, 122, 124, 183, 37, 14`, tổng `299`.
 - C-LOOK phải có thứ tự `65, 67, 98, 122, 124, 183, 14, 37`, tổng `322`.
 
 ### TC02 – Cylinder ở biên
 
-- Cylinder: `0, 199`; đầu đọc: `0`; hướng: **Tăng**
+- Cylinder: `0, 199`; đầu đọc: `0`; cylinder lớn nhất: `199`; hướng: **Phải**
 - Hai thuật toán đều phục vụ `0, 199`, tổng di chuyển `199`.
 
 ### TC03 – Cylinder âm
@@ -144,8 +147,9 @@ hướng**; C-LOOK đánh dấu **Quay vòng** và tô chặng đó màu cam tr�
 - Xóa trống hàng đợi: kết quả hợp lệ, không có yêu cầu, tổng bằng `0`.
 - Chữ thay số: `abc, 20`; cylinder vượt giới hạn: `20, 200`.
 - Đầu đọc không phải số hoặc ngoài giới hạn: `abc` hoặc `200`.
+- Cylinder lớn nhất không phải số hoặc âm; đầu đọc/yêu cầu lớn hơn giới hạn.
 - Cylinder trùng: `50, 50, 10, 190`; hai yêu cầu cylinder 50 vẫn được tính riêng.
-- Chạy TC01 với hướng **Giảm** để quan sát thứ tự phục vụ thay đổi.
+- Chạy TC01 với hướng **Trái** để quan sát thứ tự phục vụ thay đổi.
 
 Giá trị tính tay để đối chiếu có trong `reports/test_results.txt`.
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Literal, Sequence, cast
 
@@ -35,34 +36,45 @@ class SimulationResult:
 
 
 def parse_requests(value: str) -> list[int]:
-    """Chuyển chuỗi phân tách bằng dấu phẩy thành danh sách cylinder."""
+    """Chuyển danh sách cylinder phân tách bằng dấu cách hoặc dấu phẩy."""
     if not value.strip():
         return []
-    try:
-        return [int(item.strip()) for item in value.split(",")]
-    except ValueError as error:
+    if re.fullmatch(r"\s*[+-]?\d+(?:\s*(?:,|\s+)\s*[+-]?\d+)*\s*", value) is None:
         raise ValueError(
-            "Danh sách chỉ được chứa số nguyên, ví dụ: 98, 37, 122."
-        ) from error
+            "Danh sách chỉ được chứa số nguyên, ngăn cách bằng dấu cách "
+            "hoặc dấu phẩy, ví dụ: 98 37 122."
+        )
+    return [int(item) for item in re.findall(r"[+-]?\d+", value)]
 
 
 def validate_input(
-    requests: Sequence[int], head: int, direction: str
+    requests: Sequence[int],
+    head: int,
+    direction: str,
+    track_max: int = TRACK_MAX,
 ) -> Direction:
     """Kiểm tra cylinder, vị trí đầu đọc và hướng trước khi mô phỏng."""
+    if isinstance(track_max, bool) or not isinstance(track_max, int):
+        raise ValueError("Cylinder lớn nhất phải là số nguyên.")
+    if track_max < TRACK_MIN:
+        raise ValueError(
+            f"Cylinder lớn nhất phải lớn hơn hoặc bằng {TRACK_MIN}."
+        )
     if isinstance(head, bool) or not isinstance(head, int):
         raise ValueError("Vị trí đầu đọc phải là số nguyên.")
-    if not TRACK_MIN <= head <= TRACK_MAX:
-        raise ValueError(f"Vị trí đầu đọc phải nằm trong khoảng {TRACK_MIN}..{TRACK_MAX}.")
+    if not TRACK_MIN <= head <= track_max:
+        raise ValueError(
+            f"Vị trí đầu đọc phải nằm trong khoảng {TRACK_MIN}..{track_max}."
+        )
     if direction not in ("up", "down"):
         raise ValueError("Hướng di chuyển chỉ nhận 'up' hoặc 'down'.")
     for cylinder in requests:
         if isinstance(cylinder, bool) or not isinstance(cylinder, int):
             raise ValueError("Mỗi cylinder phải là một số nguyên.")
-        if not TRACK_MIN <= cylinder <= TRACK_MAX:
+        if not TRACK_MIN <= cylinder <= track_max:
             raise ValueError(
                 f"Cylinder {cylinder} không hợp lệ; giá trị phải từ "
-                f"{TRACK_MIN} đến {TRACK_MAX}."
+                f"{TRACK_MIN} đến {track_max}."
             )
     return cast(Direction, direction)
 
@@ -86,18 +98,18 @@ def create_result(
         cumulative += movement
 
         if "quay vòng" in action.lower():
-            physical_direction = "Tăng" if cylinder > position else "Giảm"
-            continuing_direction = "tăng" if direction == "up" else "giảm"
+            physical_direction = "Phải" if cylinder > position else "Trái"
+            continuing_direction = "phải" if direction == "up" else "trái"
             step_direction = (
                 f"{physical_direction} (quay vòng, tiếp tục {continuing_direction})"
             )
         else:
             step_direction = (
-                "Tăng"
+                "Phải"
                 if cylinder > position
-                else "Giảm"
+                else "Trái"
                 if cylinder < position
-                else ("Tăng" if direction == "up" else "Giảm")
+                else ("Phải" if direction == "up" else "Trái")
             )
 
         steps.append(

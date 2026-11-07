@@ -37,7 +37,8 @@ class DiskSchedulingWindow:
         self.algorithm_var = tk.StringVar(value="So sánh cả hai")
         self.requests_var = tk.StringVar(value="98, 183, 37, 122, 14, 124, 65, 67")
         self.head_var = tk.StringVar(value="53")
-        self.direction_var = tk.StringVar(value="Tăng")
+        self.track_max_var = tk.StringVar(value=str(TRACK_MAX))
+        self.direction_var = tk.StringVar(value="Phải")
         self.speed_var = tk.StringVar(value="Vừa")
         self.status_var = tk.StringVar(value="Nhập dữ liệu rồi chọn Chạy mô phỏng.")
         self.order_var = tk.StringVar(value="—")
@@ -45,7 +46,7 @@ class DiskSchedulingWindow:
         self.served_var = tk.StringVar(value="—")
         self.results: dict[str, SimulationResult] = {}
         self.initial_head = 0
-        self.active_route: str | None = None
+        self.active_route: Algorithm | None = None
         self.animation_step = 0
         self.animation_frame = 0
         self.animation_frames = 16
@@ -107,7 +108,7 @@ class DiskSchedulingWindow:
         ttk.Label(
             header,
             text="Mô phỏng từng bước LOOK và C-LOOK · Track từ "
-            f"{TRACK_MIN} đến {TRACK_MAX}",
+            f"{TRACK_MIN} đến cylinder lớn nhất đã nhập",
             style="Subheader.TLabel",
         ).pack(anchor="w", pady=(3, 0))
 
@@ -122,13 +123,14 @@ class DiskSchedulingWindow:
             row=0, column=0, sticky="w", padx=5, pady=5
         )
         ttk.Entry(inputs, textvariable=self.requests_var).grid(
-            row=0, column=1, columnspan=5, sticky="ew", padx=5, pady=5
+            row=0, column=1, columnspan=7, sticky="ew", padx=5, pady=5
         )
         ttk.Label(
             inputs,
-            text="Số nguyên phân tách bằng dấu phẩy; để trống để mô phỏng hàng đợi rỗng.",
+            text="Nhập số nguyên, cách nhau bằng dấu cách hoặc dấu phẩy; "
+            "để trống để mô phỏng hàng đợi rỗng.",
             style="Subheader.TLabel",
-        ).grid(row=1, column=1, columnspan=5, sticky="w", padx=5)
+        ).grid(row=1, column=1, columnspan=7, sticky="w", padx=5)
 
         ttk.Label(inputs, text="Vị trí đầu đọc").grid(
             row=2, column=0, sticky="w", padx=5, pady=(9, 4)
@@ -136,18 +138,24 @@ class DiskSchedulingWindow:
         ttk.Entry(inputs, textvariable=self.head_var, width=12).grid(
             row=2, column=1, sticky="w", padx=5, pady=(9, 4)
         )
-        ttk.Label(inputs, text="Hướng ban đầu").grid(
+        ttk.Label(inputs, text="Cylinder lớn nhất").grid(
             row=2, column=2, sticky="e", padx=5, pady=(9, 4)
+        )
+        ttk.Entry(inputs, textvariable=self.track_max_var, width=12).grid(
+            row=2, column=3, sticky="w", padx=5, pady=(9, 4)
+        )
+        ttk.Label(inputs, text="Hướng ban đầu").grid(
+            row=2, column=4, sticky="e", padx=5, pady=(9, 4)
         )
         ttk.Combobox(
             inputs,
             textvariable=self.direction_var,
-            values=("Tăng", "Giảm"),
+            values=("Trái", "Phải"),
             state="readonly",
             width=12,
-        ).grid(row=2, column=3, sticky="w", padx=5, pady=(9, 4))
+        ).grid(row=2, column=5, sticky="w", padx=5, pady=(9, 4))
         ttk.Label(inputs, text="Thuật toán").grid(
-            row=2, column=4, sticky="e", padx=5, pady=(9, 4)
+            row=2, column=6, sticky="e", padx=5, pady=(9, 4)
         )
         ttk.Combobox(
             inputs,
@@ -155,10 +163,10 @@ class DiskSchedulingWindow:
             values=("LOOK", "C-LOOK", "So sánh cả hai"),
             state="readonly",
             width=20,
-        ).grid(row=2, column=5, sticky="w", padx=5, pady=(9, 4))
+        ).grid(row=2, column=7, sticky="w", padx=5, pady=(9, 4))
 
         buttons = ttk.Frame(inputs)
-        buttons.grid(row=3, column=0, columnspan=6, sticky="ew", pady=(10, 0))
+        buttons.grid(row=3, column=0, columnspan=8, sticky="ew", pady=(10, 0))
         ttk.Button(buttons, text="Nạp dữ liệu mẫu", command=self._load_example).pack(
             side="left"
         )
@@ -271,26 +279,38 @@ class DiskSchedulingWindow:
     def _load_example(self) -> None:
         self.requests_var.set("98, 183, 37, 122, 14, 124, 65, 67")
         self.head_var.set("53")
-        self.direction_var.set("Tăng")
+        self.track_max_var.set(str(TRACK_MAX))
+        self.direction_var.set("Phải")
         self.algorithm_var.set("So sánh cả hai")
         self.status_var.set("Đã nạp TC01. Nhấn Chạy mô phỏng để xem kết quả.")
 
-    def _read_input(self) -> tuple[list[int], int, Direction]:
+    def _read_input(self) -> tuple[list[int], int, Direction, int]:
         requests = parse_requests(self.requests_var.get())
         head_text = self.head_var.get().strip()
+        track_max_text = self.track_max_var.get().strip()
         try:
             head = int(head_text)
         except ValueError as error:
             raise ValueError("Vị trí đầu đọc phải là số nguyên.") from error
-        direction: Direction = "up" if self.direction_var.get() == "Tăng" else "down"
-        validate_input(requests, head, direction)
-        return requests, head, direction
+        try:
+            track_max = int(track_max_text)
+        except ValueError as error:
+            raise ValueError("Cylinder lớn nhất phải là số nguyên.") from error
+        direction_value = self.direction_var.get()
+        if direction_value == "Phải":
+            direction: Direction = "up"
+        elif direction_value == "Trái":
+            direction = "down"
+        else:
+            raise ValueError("Hướng di chuyển phải là Trái hoặc Phải.")
+        validate_input(requests, head, direction, track_max)
+        return requests, head, direction, track_max
 
     def _run_simulation(self) -> None:
         try:
-            requests, head, direction = self._read_input()
-            look_result = simulate_look(requests, head, direction)
-            clook_result = simulate_clook(requests, head, direction)
+            requests, head, direction, track_max = self._read_input()
+            look_result = simulate_look(requests, head, direction, track_max)
+            clook_result = simulate_clook(requests, head, direction, track_max)
         except ValueError as error:
             self.status_var.set(f"Lỗi dữ liệu: {error}")
             messagebox.showerror("Dữ liệu không hợp lệ", str(error), parent=self.root)
@@ -299,7 +319,7 @@ class DiskSchedulingWindow:
         choice = self.algorithm_var.get()
         if choice == "LOOK":
             self.results = {"LOOK": look_result}
-            self.active_route: Algorithm = "LOOK"
+            self.active_route = "LOOK"
         elif choice == "C-LOOK":
             self.results = {"C-LOOK": clook_result}
             self.active_route = "C-LOOK"
@@ -318,7 +338,7 @@ class DiskSchedulingWindow:
         )
         self._show_summary(requests, head)
         self._fill_log()
-        self.charts.update(self.results, head, self.active_route)
+        self.charts.update(self.results, head, self.active_route, track_max)
         self._print_terminal_log(requests, head)
         self.notebook.select(self.chart_tab)
 
@@ -457,6 +477,7 @@ class DiskSchedulingWindow:
         self.paused = False
         self.requests_var.set("")
         self.head_var.set("")
+        self.track_max_var.set("")
         self.order_var.set("—")
         self.distance_var.set("—")
         self.served_var.set("—")

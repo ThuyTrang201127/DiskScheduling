@@ -7,16 +7,20 @@ from typing import Sequence
 from .common import (
     Direction,
     SimulationResult,
+    TRACK_MAX,
     create_result,
     validate_input,
 )
 
 
 def simulate_look(
-    requests: Sequence[int], head: int, direction: Direction = "up"
+    requests: Sequence[int],
+    head: int,
+    direction: Direction = "up",
+    track_max: int = TRACK_MAX,
 ) -> SimulationResult:
     """Phục vụ theo hướng đã chọn, rồi đổi chiều tại yêu cầu cuối của phía đó."""
-    direction = validate_input(requests, head, direction)
+    direction = validate_input(requests, head, direction, track_max)
     left = sorted((track for track in requests if track < head), reverse=True)
     right = sorted(track for track in requests if track > head)
     at_head = [track for track in requests if track == head]

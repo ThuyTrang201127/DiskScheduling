@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
-from algorithms.common import TRACK_MAX, SimulationResult
+from algorithms.common import TRACK_MAX, TRACK_MIN, SimulationResult
 
 COLORS = {"LOOK": "#2563eb", "C-LOOK": "#0f9d8a"}
 WRAP_COLOR = "#e58a16"
@@ -69,6 +69,7 @@ class DiskCharts:
         results: Mapping[str, SimulationResult],
         head: int,
         animation_route: str,
+        track_max: int = TRACK_MAX,
     ) -> None:
         self.results = dict(results)
         self.head = head
@@ -81,8 +82,12 @@ class DiskCharts:
         self.path_axis.set_title("Đường đi đầu đọc", color="#172b4d", fontweight="bold")
         self.path_axis.set_xlabel("Cylinder")
         self.path_axis.set_ylabel("Thứ tự bước (từ trên xuống)")
-        self.path_axis.set_xlim(-5, TRACK_MAX + 5)
-        self.path_axis.set_xticks(range(0, TRACK_MAX + 1, 20))
+        tick_step = max(1, (track_max - TRACK_MIN + 9) // 10)
+        self.path_axis.set_xlim(TRACK_MIN - 5, track_max + 5)
+        ticks = list(range(TRACK_MIN, track_max + 1, tick_step))
+        if ticks[-1] != track_max:
+            ticks.append(track_max)
+        self.path_axis.set_xticks(ticks)
 
         largest_step = max(
             (len(result.steps) for result in self.results.values()), default=0
@@ -128,7 +133,7 @@ class DiskCharts:
                     color="#34445a",
                 )
             self.path_axis.scatter(
-                [0], [head], color="#172b4d", marker="D", s=35, zorder=5
+                [head], [0], color="#172b4d", marker="D", s=35, zorder=5
             )
 
         if self.results:
