@@ -13,7 +13,7 @@ from .common import (
 )
 
 
-def simulate_look(
+def look_algorithm(
     requests: Sequence[int],
     head: int,
     direction: Direction = "up",
@@ -21,23 +21,31 @@ def simulate_look(
 ) -> SimulationResult:
     """Phục vụ theo hướng đã chọn, rồi đổi chiều tại yêu cầu cuối của phía đó."""
     direction = validate_input(requests, head, direction, track_max)
-    left = sorted((track for track in requests if track < head), reverse=True)
-    right = sorted(track for track in requests if track > head)
-    at_head = [track for track in requests if track == head]
+    sorted_requests = sorted(requests)
+    left_requests = [track for track in sorted_requests if track < head]
+    right_requests = [track for track in sorted_requests if track > head]
+    requests_at_head = [track for track in sorted_requests if track == head]
 
-    schedule: list[tuple[int, str]] = [(track, "Phục vụ") for track in at_head]
     if direction == "up":
-        schedule.extend((track, "Phục vụ") for track in right)
-        if left:
-            schedule.append((left[0], "Đổi hướng, phục vụ"))
-            schedule.extend((track, "Phục vụ") for track in left[1:])
+        sequence = requests_at_head + right_requests + left_requests[::-1]
+        turnaround_at = len(requests_at_head) + len(right_requests)
     else:
-        schedule.extend((track, "Phục vụ") for track in left)
-        if right:
-            schedule.append((right[-1], "Đổi hướng, phục vụ"))
-            schedule.extend((track, "Phục vụ") for track in reversed(right[:-1]))
+        sequence = requests_at_head + left_requests[::-1] + right_requests
+        turnaround_at = len(requests_at_head) + len(left_requests)
+
+    schedule: list[tuple[int, str]] = []
+    has_turnaround = bool(left_requests and right_requests)
+    for index, track in enumerate(sequence):
+        action = (
+            "Đổi hướng, phục vụ"
+            if has_turnaround and index == turnaround_at
+            else "Phục vụ"
+        )
+        schedule.append((track, action))
 
     return create_result("LOOK", requests, head, direction, schedule)
 
 
-__all__ = ["simulate_look"]
+simulate_look = look_algorithm
+
+__all__ = ["look_algorithm", "simulate_look"]

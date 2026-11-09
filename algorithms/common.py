@@ -35,6 +35,17 @@ class SimulationResult:
     total_movement: int
 
 
+def calculate_seek_time(sequence: Sequence[int], head: int) -> int:
+    """Tính tổng quãng đường từ đầu đọc đến hết thứ tự phục vụ."""
+    if not sequence:
+        return 0
+
+    total_movement = abs(head - sequence[0])
+    for index in range(1, len(sequence)):
+        total_movement += abs(sequence[index] - sequence[index - 1])
+    return total_movement
+
+
 def parse_requests(value: str) -> list[int]:
     """Chuyển danh sách cylinder phân tách bằng dấu cách hoặc dấu phẩy."""
     if not value.strip():
@@ -135,5 +146,7 @@ def create_result(
         algorithm=algorithm,
         order=tuple(cylinder for cylinder, _ in schedule),
         steps=tuple(steps),
-        total_movement=cumulative,
+        total_movement=calculate_seek_time(
+            tuple(cylinder for cylinder, _ in schedule), head
+        ),
     )

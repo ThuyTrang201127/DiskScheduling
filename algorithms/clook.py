@@ -13,7 +13,7 @@ from .common import (
 )
 
 
-def simulate_clook(
+def clook_algorithm(
     requests: Sequence[int],
     head: int,
     direction: Direction = "up",
@@ -21,23 +21,33 @@ def simulate_clook(
 ) -> SimulationResult:
     """Phục vụ một chiều; quay vòng đến đầu kia rồi tiếp tục cùng chiều."""
     direction = validate_input(requests, head, direction, track_max)
-    left = sorted(track for track in requests if track < head)
-    right = sorted(track for track in requests if track > head)
-    at_head = [track for track in requests if track == head]
+    sorted_requests = sorted(requests)
+    left_requests = [track for track in sorted_requests if track < head]
+    right_requests = [track for track in sorted_requests if track > head]
+    requests_at_head = [track for track in sorted_requests if track == head]
 
-    schedule: list[tuple[int, str]] = [(track, "Phục vụ") for track in at_head]
     if direction == "up":
-        schedule.extend((track, "Phục vụ") for track in right)
-        if left:
-            schedule.append((left[0], "Quay vòng, tiếp tục phải"))
-            schedule.extend((track, "Phục vụ") for track in left[1:])
+        sequence = requests_at_head + right_requests + left_requests
+        wrap_at = len(requests_at_head) + len(right_requests)
+        wrap_action = "Quay vòng, tiếp tục phải"
     else:
-        schedule.extend((track, "Phục vụ") for track in reversed(left))
-        if right:
-            schedule.append((right[-1], "Quay vòng, tiếp tục trái"))
-            schedule.extend((track, "Phục vụ") for track in reversed(right[:-1]))
+        sequence = requests_at_head + left_requests[::-1] + right_requests[::-1]
+        wrap_at = len(requests_at_head) + len(left_requests)
+        wrap_action = "Quay vòng, tiếp tục trái"
+
+    schedule: list[tuple[int, str]] = []
+    has_wraparound = bool(left_requests and right_requests)
+    for index, track in enumerate(sequence):
+        action = (
+            wrap_action
+            if has_wraparound and index == wrap_at
+            else "Phục vụ"
+        )
+        schedule.append((track, action))
 
     return create_result("C-LOOK", requests, head, direction, schedule)
 
 
-__all__ = ["simulate_clook"]
+simulate_clook = clook_algorithm
+
+__all__ = ["clook_algorithm", "simulate_clook"]
